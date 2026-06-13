@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>GRN Entry System</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f6fa;--surface:#fff;--border:#e2e5ec;
+  --text:#1a1d23;--text-muted:#6b7280;--text-faint:#9ca3af;
+  --blue:#2563eb;--blue-light:#eff4ff;
+  --green:#16a34a;--green-light:#f0fdf4;
+  --red:#dc2626;--red-light:#fef2f2;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.05);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.04);
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+.nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+.nav-brand{display:flex;align-items:center;gap:10px}
+.nav-icon{width:32px;height:32px;background:var(--blue);border-radius:8px;display:flex;align-items:center;justify-content:center}
+.nav-icon svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.nav-title{font-size:15px;font-weight:600}
+.nav-sub{font-size:12px;color:var(--text-muted);margin-left:4px}
+.record-badge{background:var(--blue-light);color:var(--blue);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.main{max-width:1100px;margin:0 auto;padding:24px 20px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:4px;width:fit-content;margin-bottom:20px}
+.tab-btn{padding:7px 20px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:500;background:transparent;color:var(--text-muted);transition:all .15s}
+.tab-btn.active{background:var(--blue);color:#fff;box-shadow:var(--shadow)}
+.tab-btn:hover:not(.active){background:var(--bg);color:var(--text)}
+.panel{display:none}.panel.active{display:block}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.form-header{padding:16px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.form-header-icon{width:28px;height:28px;border-radius:6px;background:var(--blue-light);display:flex;align-items:center;justify-content:center}
+.form-header-icon svg{width:15px;height:15px;stroke:var(--blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.form-header h2{font-size:14px;font-weight:600}
+.form-header p{font-size:12px;color:var(--text-muted)}
+.form-body{padding:16px 20px 20px}
+.field{margin-bottom:14px}.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}
+.field input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--text);background:var(--surface);outline:none;transition:border-color .15s,box-shadow .15s}
+.field input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.field input:read-only{background:var(--bg);color:var(--text-muted);cursor:default}
+.field input.ok-qty{background:var(--green-light);color:var(--green);font-weight:600;border-color:#bbf7d0}
+.field-hint{font-size:11px;color:var(--text-faint);margin-top:4px}
+.btn-row{display:flex;gap:10px;margin-top:18px}
+.btn{padding:9px 18px;border-radius:var(--radius);font-size:13px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text);transition:all .15s;display:flex;align-items:center;gap:6px}
+.btn:hover{background:var(--bg)}.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:var(--shadow)}
+.btn-primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+.btn-clear{color:var(--text-muted)}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.summary-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.summary-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px;box-shadow:var(--shadow)}
+.summary-card .label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:6px}
+.summary-card .value{font-size:24px;font-weight:700}
+.summary-card .sub{font-size:11px;color:var(--text-faint);margin-top:2px}
+.summary-card.blue .value{color:var(--blue)}
+.summary-card.green .value{color:var(--green)}
+.summary-card.red .value{color:var(--red)}
+.db-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.db-toolbar-left{display:flex;align-items:center;gap:10px}
+.db-toolbar h3{font-size:15px;font-weight:600}
+.db-search{padding:7px 12px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;width:220px;outline:none;color:var(--text);background:var(--surface)}
+.db-search:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.db-actions{display:flex;gap:8px}
+.btn-sm{padding:6px 12px;font-size:12px}
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow)}
+.table-scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead{background:var(--bg)}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--bg)}
+.td-num{font-weight:500;font-variant-numeric:tabular-nums}
+.td-ok{color:var(--green);font-weight:600}
+.td-rej{color:var(--red)}
+.row-num{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:600}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-faint)}
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.tag-green{background:var(--green-light);color:var(--green)}
+.tag-red{background:var(--red-light);color:var(--red)}
+.toast{position:fixed;bottom:24px;right:24px;background:#111827;color:#fff;padding:12px 18px;border-radius:var(--radius-lg);font-size:13px;font-weight:500;box-shadow:var(--shadow-md);opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none;z-index:100;display:flex;align-items:center;gap:8px}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast svg{width:15px;height:15px;stroke:#4ade80;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.reason-input{width:100%;border:1px solid var(--border);border-radius:6px;padding:5px 8px;font-size:12px;color:var(--text);background:var(--surface);outline:none}
+.reason-input:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+@media(max-width:700px){.form-grid{grid-template-columns:1fr}.summary-cards{grid-template-columns:1fr}.nav-sub{display:none}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-brand">
+    <div class="nav-icon">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    </div>
+    <div>
+      <span class="nav-title">GRN Entry System</span>
+      <span class="nav-sub">— Goods Receipt Note</span>
+    </div>
+  </div>
+  <span class="record-badge" id="record-badge">0 records</span>
+</nav>
+
+<div class="main">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('entry')">&#128203; Sheet 1 &mdash; Entry Form</button>
+    <button class="tab-btn" onclick="showTab('database')">&#128451; Sheet 2 &mdash; Database</button>
+  </div>
+
+  <!-- ENTRY PANEL -->
+  <div id="panel-entry" class="panel active">
+    <div class="form-grid">
+      <div class="form-card">
+        <div class="form-header">
+          <div class="form-header-icon">
+            <svg viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          </div>
+          <div><h2>New Entry</h2><p>Fill all fields and save</p></div>
+        </div>
+        <div class="form-body">
+          <div class="field"><label>Item Code</label><input type="text" id="f-itemcode" placeholder="e.g. RMINP_1636" autocomplete="off"/></div>
+          <div class="field"><label>Bill No</label><input type="text" id="f-billno" placeholder="e.g. 1234" autocomplete="off"/></div>
+          <div class="field"><label>Bill Date</label><input type="date" id="f-billdate"/></div>
+          <div class="field"><label>GRN Date</label><input type="date" id="f-grndate"/></div>
+          <div class="field"><label>RCVD QTY.</label><input type="number" id="f-rcvd" placeholder="400" min="0" autocomplete="off"/></div>
+          <div class="field"><label>REJ. QTY</label><input type="number" id="f-rej" placeholder="10" min="0" autocomplete="off"/></div>
+          <div class="field"><label>REASON FOR REJECTION <span style="color:var(--text-faint);font-size:10px;font-weight:400;margin-left:4px">optional</span></label><input type="text" id="f-reason" placeholder="e.g. Damaged packaging, wrong size..." autocomplete="off"/></div>
+          <div class="field">
+            <label>OK QTY <span style="color:#16a34a;font-size:10px;font-weight:400;margin-left:4px">auto-calculated</span></label>
+            <input type="number" id="f-ok" class="ok-qty" readonly placeholder="&mdash;" tabindex="-1"/>
+            <div class="field-hint">= RCVD QTY &minus; REJ. QTY</div>
+          </div>
+          <div class="btn-row">
+            <button class="btn btn-primary" onclick="saveEntry()">
+              <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save &amp; Clear
+            </button>
+            <button class="btn btn-clear" onclick="clearForm()">
+              <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.9"/></svg>
+              Clear
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="summary-cards" style="margin-bottom:16px">
+          <div class="summary-card blue"><div class="label">Total Entries</div><div class="value" id="stat-total">0</div><div class="sub">saved records</div></div>
+          <div class="summary-card green"><div class="label">Total OK Qty</div><div class="value" id="stat-ok">0</div><div class="sub">units accepted</div></div>
+          <div class="summary-card red"><div class="label">Total Rejected</div><div class="value" id="stat-rej">0</div><div class="sub">units rejected</div></div>
+        </div>
+        <div class="form-card">
+          <div class="form-header">
+            <div class="form-header-icon">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            </div>
+            <div><h2>Recent entries</h2><p>Last 3 saved records</p></div>
+          </div>
+          <div style="padding:14px 16px" id="recent-list">
+            <div style="color:var(--text-faint);font-size:12px;text-align:center;padding:16px 0">No entries yet</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATABASE PANEL -->
+  <div id="panel-database" class="panel">
+    <div class="db-toolbar">
+      <div class="db-toolbar-left">
+        <h3>All Records</h3>
+        <input type="text" class="db-search" id="db-search" placeholder="Search item code, bill no&hellip;" oninput="renderDB()"/>
+      </div>
+      <div class="db-actions">
+        <button class="btn btn-sm" onclick="clearAllData()" style="color:#dc2626;border-color:#fecaca">
+          <svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          Clear All
+        </button>
+        <button class="btn btn-sm btn-primary" onclick="exportXLSX()">
+          <svg style="width:12px;height:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export Excel
+        </button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>#</th><th>Item Code</th><th>Bill No</th><th>Bill Date</th><th>GRN Date</th><th>RCVD QTY</th><th>REJ. QTY</th><th>Reason for Rejection</th><th>OK QTY</th><th>Saved At</th><th></th></tr></thead>
+          <tbody id="db-tbody"><tr><td colspan="11"><div class="empty-state"><p>No records yet. Go to Sheet 1 and add entries.</p></div></td></tr></tbody>
+          <tfoot id="db-tfoot" style="display:none"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg"></span>
+</div>
+
+<script>
+/* ===== SELF-CONTAINED XLSX WRITER ===== */
+var XLSXWriter = (function(){
+  function escXML(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+  function colName(n){var s='';n++;while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);}return s;}
+  function cellAddr(r,c){return colName(c)+(r+1);}
+
+  function buildXLSX(rows, sheetName){
+    sheetName = sheetName || 'Sheet1';
+    var sharedStrings=[], ssMap={};
+    function si(val){var k=String(val);if(ssMap[k]===undefined){ssMap[k]=sharedStrings.length;sharedStrings.push(k);}return ssMap[k];}
+
+    var cellsXML='', maxCol=0;
+    rows.forEach(function(row,ri){
+      if(row.length>maxCol)maxCol=row.length;
+      var rowXML='<row r="'+(ri+1)+'">';
+      row.forEach(function(val,ci){
+        var addr=cellAddr(ri,ci);
+        if(val===null||val===undefined||val===''){rowXML+='<c r="'+addr+'"/>';return;}
+        if(typeof val==='number'){
+          rowXML+='<c r="'+addr+'" t="n"><v>'+val+'</v></c>';
+        } else {
+          rowXML+='<c r="'+addr+'" t="s"><v>'+si(val)+'</v></c>';
+        }
+      });
+      rowXML+='</row>';
+      cellsXML+=rowXML;
+    });
+
+    var colsXML='<cols>';
+    var widths=[5,18,10,12,12,10,10,24,10,20];
+    for(var i=0;i<maxCol;i++){var w=widths[i]||12;colsXML+='<col min="'+(i+1)+'" max="'+(i+1)+'" width="'+w+'" customWidth="1"/>';}
+    colsXML+='</cols>';
+
+    var sheetXML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      +colsXML+'<sheetData>'+cellsXML+'</sheetData></worksheet>';
+
+    var ssXML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="'+sharedStrings.length+'" uniqueCount="'+sharedStrings.length+'">'
+      +sharedStrings.map(function(s){return'<si><t xml:space="preserve">'+escXML(s)+'</t></si>';}).join('')
+      +'</sst>';
+
+    var wbXML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      +'<sheets><sheet name="'+escXML(sheetName)+'" sheetId="1" r:id="rId1"/></sheets></workbook>';
+
+    var wbRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+      +'<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>'
+      +'</Relationships>';
+
+    var rootRels='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      +'<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+      +'</Relationships>';
+
+    var contentTypes='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      +'<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      +'<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      +'<Default Extension="xml" ContentType="application/xml"/>'
+      +'<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      +'<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+      +'<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/>'
+      +'</Types>';
+
+    /* Build ZIP */
+    var zip = new JSZip();
+    zip.file('[Content_Types].xml', contentTypes);
+    zip.file('_rels/.rels', rootRels);
+    zip.file('xl/workbook.xml', wbXML);
+    zip.file('xl/_rels/workbook.xml.rels', wbRels);
+    zip.file('xl/worksheets/sheet1.xml', sheetXML);
+    zip.file('xl/sharedStrings.xml', ssXML);
+    return zip.generate({type:'blob', mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+  }
+
+  return {write: buildXLSX};
+})();
+
+/* ===== MINIMAL JSZip INLINE (deflate-free, store only) ===== */
+var JSZip=(function(){
+  function JSZip(){this.files={};}
+  JSZip.prototype.file=function(name,data){this.files[name]={name:name,data:data};return this;};
+  function toUint8(str){
+    var b=new Uint8Array(str.length);
+    for(var i=0;i<str.length;i++)b[i]=str.charCodeAt(i)&0xff;
+    return b;
+  }
+  function crc32(buf){
+    var c=0xFFFFFFFF;
+    var table=[];
+    for(var i=0;i<256;i++){var k=i;for(var j=0;j<8;j++)k=k&1?(0xEDB88320^(k>>>1)):k>>>1;table[i]=k;}
+    for(var i=0;i<buf.length;i++)c=table[(c^buf[i])&0xff]^(c>>>8);
+    return(c^0xFFFFFFFF)>>>0;
+  }
+  function u32le(n){return[n&0xff,(n>>8)&0xff,(n>>16)&0xff,(n>>24)&0xff];}
+  function u16le(n){return[n&0xff,(n>>8)&0xff];}
+  JSZip.prototype.generate=function(opts){
+    var entries=[];
+    var offset=0;
+    var central=[];
+    Object.keys(this.files).forEach(function(name){
+      var f=this.files[name];
+      var data=typeof f.data==='string'?toUint8(f.data):new Uint8Array(f.data);
+      var nameBytes=toUint8(name);
+      var crc=crc32(data);
+      var local=[0x50,0x4B,0x03,0x04,0x14,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00]
+        .concat(u32le(crc))
+        .concat(u32le(data.length))
+        .concat(u32le(data.length))
+        .concat(u16le(nameBytes.length))
+        .concat([0x00,0x00])
+        .concat(Array.from(nameBytes))
+        .concat(Array.from(data));
+      central.push({name:nameBytes,crc:crc,size:data.length,offset:offset});
+      entries=entries.concat(local);
+      offset+=local.length;
+    }.bind(this));
+    var centralStart=offset;
+    central.forEach(function(c){
+      var cd=[0x50,0x4B,0x01,0x02,0x14,0x00,0x14,0x00,0x00,0x00,0x00,0x00,
+        0x00,0x00,0x00,0x00]
+        .concat(u32le(c.crc))
+        .concat(u32le(c.size))
+        .concat(u32le(c.size))
+        .concat(u16le(c.name.length))
+        .concat([0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00])
+        .concat(u32le(c.offset))
+        .concat(Array.from(c.name));
+      entries=entries.concat(cd);
+    });
+    var centralSize=entries.length-centralStart;
+    var eocd=[0x50,0x4B,0x05,0x06,0x00,0x00,0x00,0x00]
+      .concat(u16le(central.length))
+      .concat(u16le(central.length))
+      .concat(u32le(centralSize))
+      .concat(u32le(centralStart))
+      .concat([0x00,0x00]);
+    entries=entries.concat(eocd);
+    var blob=new Blob([new Uint8Array(entries)],{type:opts&&opts.mimeType?opts.mimeType:'application/zip'});
+    return blob;
+  };
+  return JSZip;
+})();
+
+/* ===== APP ===== */
+var DB=JSON.parse(localStorage.getItem('grn_db')||'[]');
+var today=new Date().toISOString().split('T')[0];
+document.getElementById('f-billdate').value=today;
+document.getElementById('f-grndate').value=today;
+
+function calcOK(){
+  var r=parseFloat(document.getElementById('f-rcvd').value)||0;
+  var j=parseFloat(document.getElementById('f-rej').value)||0;
+  var ok=Math.max(0,r-j);
+  document.getElementById('f-ok').value=(ok>0||r>0)?ok:'';
+}
+document.getElementById('f-rcvd').addEventListener('input',calcOK);
+document.getElementById('f-rej').addEventListener('input',calcOK);
+
+var fieldIds=['f-itemcode','f-billno','f-billdate','f-grndate','f-rcvd','f-rej','f-reason'];
+fieldIds.forEach(function(id,i){
+  document.getElementById(id).addEventListener('keydown',function(e){
+    if(e.key==='Enter'||e.key==='Tab'){
+      e.preventDefault();
+      if(i<fieldIds.length-1){document.getElementById(fieldIds[i+1]).focus();}
+      else{saveEntry();}
+    }
+  });
+});
+
+function saveEntry(){
+  var item=document.getElementById('f-itemcode').value.trim();
+  var billno=document.getElementById('f-billno').value.trim();
+  var bd=document.getElementById('f-billdate').value;
+  var gd=document.getElementById('f-grndate').value;
+  var rcvd=document.getElementById('f-rcvd').value;
+  var rej=document.getElementById('f-rej').value;
+  var reason=document.getElementById('f-reason').value.trim();
+  var ok=document.getElementById('f-ok').value;
+  if(!item||!billno||!rcvd){showToast('Please fill Item Code, Bill No and RCVD QTY',true);return;}
+  var now=new Date();
+  DB.push({id:Date.now(),item:item,billno:billno,bd:bd,gd:gd,rcvd:rcvd,rej:rej||'0',reason:reason||'',ok:ok||'0',
+    ts:now.toLocaleDateString('en-IN')+' '+now.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})});
+  localStorage.setItem('grn_db',JSON.stringify(DB));
+  clearForm();updateStats();renderRecent();renderDB();updateBadge();
+  showToast('Entry #'+DB.length+' saved!');
+  document.getElementById('f-itemcode').focus();
+}
+
+function clearForm(){
+  var t=new Date().toISOString().split('T')[0];
+  ['f-itemcode','f-billno','f-rcvd','f-rej','f-reason','f-ok'].forEach(function(id){document.getElementById(id).value='';});
+  document.getElementById('f-billdate').value=t;
+  document.getElementById('f-grndate').value=t;
+  document.getElementById('f-itemcode').focus();
+}
+
+function updateStats(){
+  var ok=DB.reduce(function(s,r){return s+(parseInt(r.ok)||0);},0);
+  var rej=DB.reduce(function(s,r){return s+(parseInt(r.rej)||0);},0);
+  document.getElementById('stat-total').textContent=DB.length;
+  document.getElementById('stat-ok').textContent=ok.toLocaleString('en-IN');
+  document.getElementById('stat-rej').textContent=rej.toLocaleString('en-IN');
+}
+
+function renderRecent(){
+  var el=document.getElementById('recent-list');
+  var last=DB.slice(-3).reverse();
+  if(!last.length){el.innerHTML='<div style="color:var(--text-faint);font-size:12px;text-align:center;padding:16px 0">No entries yet</div>';return;}
+  el.innerHTML=last.map(function(r,i){
+    return'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;'+(i<last.length-1?'border-bottom:1px solid var(--border);':'')+'">'
+      +'<div><div style="font-size:13px;font-weight:600">'+r.item+'</div>'
+      +'<div style="font-size:11px;color:var(--text-muted)">Bill: '+r.billno+' &nbsp;&middot;&nbsp; '+r.ts+'</div></div>'
+      +'<span class="tag tag-green">OK: '+r.ok+'</span></div>';
+  }).join('');
+}
+
+function escapeHTML(s){
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderDB(){
+  var q=(document.getElementById('db-search').value||'').toLowerCase();
+  var rows=DB.filter(function(r){return!q||r.item.toLowerCase().includes(q)||r.billno.toLowerCase().includes(q)||(r.reason||'').toLowerCase().includes(q);});
+  var tbody=document.getElementById('db-tbody');
+  if(!rows.length){tbody.innerHTML='<tr><td colspan="11"><div class="empty-state"><p>'+(q?'No records match your search.':'No records yet. Go to Sheet 1 and add entries.')+'</p></div></td></tr>';document.getElementById('db-tfoot').style.display='none';return;}
+  tbody.innerHTML=rows.map(function(r){
+    var idx=DB.indexOf(r)+1;
+    return'<tr>'
+      +'<td><span class="row-num">'+idx+'</span></td>'
+      +'<td style="font-weight:500">'+r.item+'</td>'
+      +'<td>'+r.billno+'</td>'
+      +'<td>'+(r.bd?r.bd.split('-').reverse().join('/'):'&mdash;')+'</td>'
+      +'<td>'+(r.gd?r.gd.split('-').reverse().join('/'):'&mdash;')+'</td>'
+      +'<td class="td-num">'+(parseInt(r.rcvd)||0).toLocaleString('en-IN')+'</td>'
+      +'<td class="td-num td-rej">'+(parseInt(r.rej)||0).toLocaleString('en-IN')+'</td>'
+      +'<td><input type="text" class="reason-input" value="'+escapeHTML(r.reason||'')+'" placeholder="&mdash;" onchange="updateReason('+r.id+',this.value)"/></td>'
+      +'<td class="td-num td-ok">'+(parseInt(r.ok)||0).toLocaleString('en-IN')+'</td>'
+      +'<td style="color:var(--text-faint);font-size:12px">'+r.ts+'</td>'
+      +'<td><button onclick="deleteRow('+r.id+')" style="background:none;border:none;cursor:pointer;color:var(--text-faint);padding:2px 6px;border-radius:4px" title="Delete">'
+      +'<svg style="width:13px;height:13px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>'
+      +'</button></td></tr>';
+  }).join('');
+
+  var tfoot=document.getElementById('db-tfoot');
+  if(q){
+    var sumRcvd=rows.reduce(function(s,r){return s+(parseInt(r.rcvd)||0);},0);
+    var sumRej=rows.reduce(function(s,r){return s+(parseInt(r.rej)||0);},0);
+    var sumOK=rows.reduce(function(s,r){return s+(parseInt(r.ok)||0);},0);
+    tfoot.innerHTML='<tr style="background:var(--bg);font-weight:700">'
+      +'<td colspan="5" style="text-align:right">TOTAL ('+rows.length+' entr'+(rows.length===1?'y':'ies')+')</td>'
+      +'<td class="td-num">'+sumRcvd.toLocaleString('en-IN')+'</td>'
+      +'<td class="td-num td-rej">'+sumRej.toLocaleString('en-IN')+'</td>'
+      +'<td></td>'
+      +'<td class="td-num td-ok">'+sumOK.toLocaleString('en-IN')+'</td>'
+      +'<td></td><td></td></tr>';
+    tfoot.style.display='';
+  } else {
+    tfoot.style.display='none';
+  }
+}
+
+function updateReason(id,val){
+  var rec=DB.find(function(r){return r.id===id;});
+  if(!rec)return;
+  rec.reason=val;
+  localStorage.setItem('grn_db',JSON.stringify(DB));
+  showToast('Reason updated');
+}
+
+function deleteRow(id){
+  if(!confirm('Delete this entry?'))return;
+  DB=DB.filter(function(r){return r.id!==id;});
+  localStorage.setItem('grn_db',JSON.stringify(DB));
+  updateStats();renderRecent();renderDB();updateBadge();showToast('Entry deleted');
+}
+
+function clearAllData(){
+  if(!confirm('Clear ALL '+DB.length+' records? This cannot be undone.'))return;
+  DB=[];localStorage.setItem('grn_db',JSON.stringify(DB));
+  updateStats();renderRecent();renderDB();updateBadge();showToast('All records cleared');
+}
+
+function exportXLSX(){
+  if(!DB.length){showToast('No data to export',true);return;}
+  var rows=[['SR','ITEM CODE','BILL NO','BILL DATE','GRN DATE','RCVD QTY','REJ QTY','REASON FOR REJECTION','OK QTY','SAVED AT']];
+  DB.forEach(function(r,i){
+    rows.push([i+1,r.item,r.billno,
+      r.bd?r.bd.split('-').reverse().join('/'):'',
+      r.gd?r.gd.split('-').reverse().join('/'):'',
+      parseInt(r.rcvd)||0,parseInt(r.rej)||0,r.reason||'',parseInt(r.ok)||0,r.ts]);
+  });
+  var blob=XLSXWriter.write(rows,'GRN Database');
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='GRN_Database_'+new Date().toISOString().slice(0,10)+'.xlsx';
+  a.click();
+  showToast('Excel file downloaded!');
+}
+
+function updateBadge(){document.getElementById('record-badge').textContent=DB.length+(DB.length===1?' record':' records');}
+
+function showTab(tab){
+  document.getElementById('panel-entry').classList.toggle('active',tab==='entry');
+  document.getElementById('panel-database').classList.toggle('active',tab==='database');
+  document.querySelectorAll('.tab-btn').forEach(function(b,i){b.classList.toggle('active',(i===0&&tab==='entry')||(i===1&&tab==='database'));});
+  if(tab==='database')renderDB();
+}
+
+var toastTimer;
+function showToast(msg,isError){
+  clearTimeout(toastTimer);
+  document.getElementById('toast-msg').textContent=msg;
+  var t=document.getElementById('toast');
+  t.style.background=isError?'#7f1d1d':'#111827';
+  t.classList.add('show');
+  toastTimer=setTimeout(function(){t.classList.remove('show');},2800);
+}
+
+updateStats();renderRecent();updateBadge();
+document.getElementById('f-itemcode').focus();
+</script>
+</body>
+</html>
